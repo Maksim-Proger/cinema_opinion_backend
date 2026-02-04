@@ -3,7 +3,7 @@ from app.repositories.changes_repository import ChangesRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.device_query_repository import DeviceQueryRepository
 from app.services.rustore_push_service import RuStorePushService
-from app.models.event_model import ChangeCreatedEvent
+from app.models.event_models import ChangeCreatedEvent
 
 logger = logging.getLogger(__name__)
 
