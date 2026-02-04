@@ -1,0 +1,26 @@
+# ===== Виртуальная среда =====
+venv/
+.venv/
+
+# ===== Переменные окружения =====
+.env
+
+# ===== Кэш Python =====
+pycache/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# ===== Логи =====
+*.log
+
+# ===== Файлы сессии Telethon =====
+*.session
+
+# ===== Настройки IDE =====
+.idea/
+.vscode/
+
+# Google Services
+serviceAccountKey.json
