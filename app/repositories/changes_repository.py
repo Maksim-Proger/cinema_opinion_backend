@@ -1,5 +1,5 @@
 from firebase_admin import db
-from firebase_admin.exceptions import TransactionAbortedError
+from firebase_admin.db import TransactionAbortedError
 
 class ChangesRepository:
     @staticmethod
