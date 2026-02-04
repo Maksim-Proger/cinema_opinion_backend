@@ -6,4 +6,4 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 @router.post("/change-created")
 def change_created(event: ChangeCreatedEvent):
-    return ProcessChangeEventUseCase().execute(event.changeId)
+    return ProcessChangeEventUseCase().execute(event)
