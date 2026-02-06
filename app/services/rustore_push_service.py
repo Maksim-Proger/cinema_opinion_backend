@@ -19,14 +19,14 @@ class RuStorePushService:
         payload = {
             "message": {
                 "token": device_push_token,
-                # "data": {
-                #     "title": title,
-                #     "body": body
-                # }
-                "notification": {
+                "data": {
                     "title": title,
                     "body": body
-                },
+                }
+                # "notification": {
+                #     "title": title,
+                #     "body": body
+                # },
                 # "android": {
                 #     "notification": {
                 #         "icon": "ic_notification",
