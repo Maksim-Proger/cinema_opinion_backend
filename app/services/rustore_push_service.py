@@ -19,17 +19,21 @@ class RuStorePushService:
         payload = {
             "message": {
                 "token": device_push_token,
-                "notification": {
+                "data": {
                     "title": title,
                     "body": body
-                },
-                "android": {
-                    "notification": {
-                        "icon": "ic_notification",
-                        "color": "#1D2523",
-                        "channel_id": "default_push_channel"
-                    }
                 }
+                # "notification": {
+                #     "title": title,
+                #     "body": body
+                # },
+                # "android": {
+                #     "notification": {
+                #         "icon": "ic_notification",
+                #         "color": "#1D2523",
+                #         "channel_id": "default_push_channel"
+                #     }
+                # }
             }
         }
 
