@@ -27,11 +27,7 @@ class RuStorePushService:
                     "notification": {
                         "icon": "ic_notification",
                         "color": "#1D2523",
-                        "channel_id": "default_push_channel",
-                        # Добавляем стиль для развертывания
-                        "style": 1,  # 1 обычно соответствует BigTextStyle
-                        "big_title": title,
-                        "big_body": body
+                        "channel_id": "default_push_channel"
                     }
                 }
             }
