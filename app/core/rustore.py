@@ -6,10 +6,9 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 RUSTORE_BASE_URL = "https://vkpns.rustore.ru/v1"
-# URL для получения токена (согласно доке RuStore)
 AUTH_URL = "https://auth.vkpns.rustore.ru/v1/internal/auth"
 
-# Переменные для хранения токена в памяти процесса
+# Кэш для токена в памяти процесса
 _cached_access_token = None
 _token_expires_at = 0
 
@@ -19,38 +18,40 @@ def get_access_token() -> str:
 
     current_time = time.time()
 
-    # Если токен есть и он будет валиден еще хотя бы 10 минут — возвращаем его
+    # 1. Если в кэше есть живой access_token, возвращаем его
     if _cached_access_token and current_time < (_token_expires_at - 600):
         return _cached_access_token
 
-    # Если токена нет или он просрочен — идем за новым
+    # 2. Пробуем обменять service_token на новый access_token
     try:
-        with httpx.Client() as client:
+        with httpx.Client(timeout=5.0) as client:
             response = client.post(
                 AUTH_URL,
                 json={"service_token": settings.rustore_service_token},
-                timeout=10.0
+                headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
+
             data = response.json()
-
-            # В ответе RuStore токен лежит в body.access_token
-            # А время жизни в body.expires_in (обычно это 24 часа в секундах)
             body = data.get("body", {})
-            _cached_access_token = body.get("access_token")
-            expires_in = body.get("expires_in", 86400)
 
+            _cached_access_token = body.get("access_token")
+            # Если время жизни не пришло, ставим 24 часа (86400 сек)
+            expires_in = body.get("expires_in", 86400)
             _token_expires_at = current_time + expires_in
 
             logger.info("RuStore Access Token refreshed successfully")
             return _cached_access_token
 
     except Exception as e:
-        logger.error(f"Failed to refresh RuStore Access Token: {e}")
-        # Если не удалось получить новый, а старый еще есть — попробуем вернуть старый как последний шанс
-        if _cached_access_token:
-            return _cached_access_token
-        raise
+        # 3. Если RuStore выдал 502 или лежит — откатываемся к старому методу
+        logger.warning(
+            f"RuStore Auth failed ({type(e).__name__}: {e}). "
+            "Falling back to static service_token."
+        )
+        # Возвращаем service_token напрямую. В этом случае RuStore
+        # может принять его как замену access_token (как это было раньше).
+        return settings.rustore_service_token
 
 
 def rustore_send_url() -> str:
@@ -58,7 +59,7 @@ def rustore_send_url() -> str:
 
 
 def rustore_headers() -> dict:
-    # Теперь мы вызываем функцию, которая сама решит: выдать старый токен или обновить его
+    # Вызываем получение токена (умное или с откатом)
     token = get_access_token()
     return {
         "Authorization": f"Bearer {token}",
