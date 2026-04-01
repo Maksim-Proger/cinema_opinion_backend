@@ -7,12 +7,12 @@ class DeviceQueryRepository:
     Чтение устройств пользователей для fan-out push.
     """
     @staticmethod
-    def get_push_targets(user_keys: list[str]) -> list[DevicePushTarget]:
+    def get_push_targets(node_user_keys: list[str]) -> list[DevicePushTarget]:
 
         targets: list[DevicePushTarget] = []
 
-        for user_key in user_keys:
-            devices_ref = db.reference(f"list_users/{user_key}/devices")
+        for node_user_key in node_user_keys:
+            devices_ref = db.reference(f"list_users/{node_user_key}/devices")
             devices_snapshot = devices_ref.get()
 
             if not devices_snapshot:
@@ -33,7 +33,7 @@ class DeviceQueryRepository:
 
                 targets.append(
                     DevicePushTarget(
-                        userKey=user_key,
+                        userKey=node_user_key,
                         deviceId=device_id,
                         pushToken=push_token,
                         platform=device_data.get("platform", "android")

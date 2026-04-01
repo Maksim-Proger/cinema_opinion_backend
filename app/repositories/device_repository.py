@@ -1,16 +1,17 @@
 import time
 from firebase_admin import db
 
+
 class DeviceRepository:
 
     @staticmethod
     def upsert_device(
-        user_id: str,
-        device_id: str,
-        push_token: str,
-        platform: str
+            node_user_key: str,
+            device_id: str,
+            push_token: str,
+            platform: str
     ):
-        ref = db.reference(f"list_users/{user_id}/devices/{device_id}")
+        ref = db.reference(f"list_users/{node_user_key}/devices/{device_id}")
         ref.update({
             "pushToken": push_token,
             "platform": platform,
@@ -19,6 +20,6 @@ class DeviceRepository:
         })
 
     @staticmethod
-    def disable_push(user_id: str, device_id: str):
-        ref = db.reference(f"users/{user_id}/devices/{device_id}")
+    def disable_push(node_user_key: str, device_id: str):
+        ref = db.reference(f"list_users/{node_user_key}/devices/{device_id}")
         ref.update({"pushEnabled": False})

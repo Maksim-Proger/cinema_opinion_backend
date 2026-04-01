@@ -1,33 +1,20 @@
 from firebase_admin import db
 
 class UserRepository:
+    class UserRepository:
+        @staticmethod
+        def find_users_by_shared_list(shared_list_id: str) -> list[str]:
+            ref = db.reference("shared_lists")
+            snapshot = ref.get()
 
-    """
-    Работа с пользователями в RTDB.
-    """
-    @staticmethod
-    def find_users_by_shared_list(shared_list_id: str) -> list[str]:
-        """
-        Возвращает список userKey (ключей в users),
-        у которых есть my_shared_list с указанным sharedListId.
-        """
-        users_ref = db.reference("list_users")
-        users_snapshot = users_ref.get()
+            if not snapshot:
+                return []
 
-        if not users_snapshot:
+            for node_key, node_data in snapshot.items():
+                if node_data.get("listId") == shared_list_id:
+                    users = node_data.get("users")
+                    if not users:
+                        return []
+                    return list(users.keys())
+
             return []
-
-        matched_user_keys: list[str] = []
-
-        for user_key, user_data in users_snapshot.items():
-            shared_lists = user_data.get("my_shared_list")
-
-            if not shared_lists:
-                continue
-
-            for item in shared_lists.values():
-                if item.get("listId") == shared_list_id:
-                    matched_user_keys.append(user_key)
-                    break
-
-        return matched_user_keys

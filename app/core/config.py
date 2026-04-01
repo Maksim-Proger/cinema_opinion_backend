@@ -5,7 +5,9 @@ class Settings(BaseSettings):
     firebase_cred_path: str
     rustore_project_id: str
     rustore_service_token: str
+    api_secret_key: str
 
     class Config:
         env_file = ".env"
+
 settings = Settings()
