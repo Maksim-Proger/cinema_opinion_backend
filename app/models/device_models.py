@@ -3,6 +3,16 @@ import re
 
 SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-]{1,128}$')
 
+class DisablePushRequest(BaseModel):
+    userId: str
+    deviceId: str
+
+    @field_validator('userId', 'deviceId')
+    @classmethod
+    def validate_id(cls, v):
+        if not SAFE_ID_PATTERN.match(v):
+            raise ValueError("Invalid ID format")
+        return v
 
 class RegisterDeviceRequest(BaseModel):
     userId: str

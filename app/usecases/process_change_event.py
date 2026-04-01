@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 class ProcessChangeEventUseCase:
     def execute(self, event: ChangeCreatedEvent) -> dict:
-        # Извлекаем ID события и ID пользователя, который его прислал
         change_id = event.changeId
         author_node_key = event.userId
 
@@ -19,39 +18,38 @@ class ProcessChangeEventUseCase:
         if not change:
             return {"status": "not_found"}
 
-        # 2. Проверяем, не обрабатывалось ли оно уже (защита от дублей)
-        if ChangesRepository.is_processed(change):
+        # 2. Атомарно захватываем право на обработку (убрали is_processed)
+        acquired = ChangesRepository.mark_as_processed(change_id)
+        if not acquired:
             return {"status": "already_processed"}
 
+        # 3. Находим ID общего списка
         shared_list_id = change.get("sharedListId")
         if not shared_list_id:
             return {"status": "invalid_event", "reason": "sharedListId missing"}
 
-        # 3. Находим ВСЕХ участников общего списка
+        # 4. Находим участников списка
         all_node_user_keys = UserRepository.find_users_by_shared_list(shared_list_id)
 
-        # 4. ФИЛЬТРАЦИЯ: Оставляем только тех, кто НЕ является автором (userId из запроса)
+        # 5. Исключаем автора
         node_user_keys = [key for key in all_node_user_keys if key != author_node_key]
 
         if not node_user_keys:
-            # Если после исключения автора рассылать некому
-            ChangesRepository.mark_as_processed(change_id)
             return {"status": "processed", "reason": "no_recipients_excluding_author"}
 
-        # 5. Получаем токены устройств только для отфильтрованных пользователей
+        # 6. Получаем токены устройств
         push_targets = DeviceQueryRepository.get_push_targets(node_user_keys)
         if not push_targets:
-            ChangesRepository.mark_as_processed(change_id)
             return {"status": "processed", "reason": "no_devices"}
 
-        # 6. Подготавливаем контент уведомления
+        # 7. Подготавливаем контент уведомления
         title = change.get("username", "Уведомление")
         body = change.get("noteText", "")
 
         sent = 0
         failed = 0
 
-        # 7. Рассылка по найденным устройствам
+        # 8. Рассылка
         for target in push_targets:
             try:
                 status_code, resp_text = RuStorePushService.send(
@@ -84,14 +82,11 @@ class ProcessChangeEventUseCase:
                     exc_info=True
                 )
 
-        # 8. Финализация: помечаем изменение как обработанное
-        ChangesRepository.mark_as_processed(change_id)
-
         return {
             "status": "processed",
             "changeId": change_id,
-            "usersCount": len(node_user_keys),  # Количество людей, получивших пуш
-            "devicesCount": len(push_targets),  # Общее количество их девайсов
+            "usersCount": len(node_user_keys),
+            "devicesCount": len(push_targets),
             "sent": sent,
             "failed": failed
         }

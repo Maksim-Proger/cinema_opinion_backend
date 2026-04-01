@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.models.device_models import RegisterDeviceRequest
+from app.models.device_models import RegisterDeviceRequest, DisablePushRequest
 from app.usecases.register_device import RegisterDeviceUseCase
 from app.repositories.device_repository import DeviceRepository
 
@@ -11,6 +11,6 @@ def register_device(request: RegisterDeviceRequest):
     return {"status": "ok"}
 
 @router.post("/disable")
-def disable_push(userId: str, deviceId: str):
-    DeviceRepository.disable_push(userId, deviceId)
+def disable_push(request: DisablePushRequest):
+    DeviceRepository.disable_push(request.userId, request.deviceId)
     return {"status": "push_disabled"}
