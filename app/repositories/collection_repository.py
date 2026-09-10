@@ -2,6 +2,41 @@ from app.core.database import get_connection, release_connection
 
 class CollectionRepository:
 
+    IMPORT_LOCK_KEY = 776421
+
+    @staticmethod
+    def try_acquire_import_lock():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pg_try_advisory_lock(%s)",
+                    (CollectionRepository.IMPORT_LOCK_KEY,)
+                )
+                acquired = cur.fetchone()[0]
+            conn.commit()
+        except Exception:
+            release_connection(conn)
+            raise
+
+        if acquired:
+            return conn
+
+        release_connection(conn)
+        return None
+
+    @staticmethod
+    def release_import_lock(conn):
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pg_advisory_unlock(%s)",
+                    (CollectionRepository.IMPORT_LOCK_KEY,)
+                )
+            conn.commit()
+        finally:
+            release_connection(conn)
+
     @staticmethod
     def existing_codes(kind: str) -> set[str]:
         conn = get_connection()
@@ -62,3 +97,4 @@ class CollectionRepository:
             raise
         finally:
             release_connection(conn)
+

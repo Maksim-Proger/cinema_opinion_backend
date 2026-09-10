@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 FIRST_YEAR = 1995
 QUOTA_RESERVE = 30
+QUOTA_EXHAUSTED_STATUS = 402
 REQUEST_DELAY_SECONDS = 1.0
 RATE_LIMIT_PAUSE_SECONDS = 15
 MAX_RETRIES = 3
@@ -70,6 +71,10 @@ def fetch_month(client: httpx.Client, year: int, month: str) -> list[dict] | Non
             time.sleep(pause)
             continue
 
+        if response.status_code == QUOTA_EXHAUSTED_STATUS:
+            logger.info("Суточная квота исчерпана на %s %s", month, year)
+            return None
+
         response.raise_for_status()
         items = response.json().get("items") or []
         return [map_item(raw, index + 1) for index, raw in enumerate(items)]
@@ -78,6 +83,18 @@ def fetch_month(client: httpx.Client, year: int, month: str) -> list[dict] | Non
 
 
 def import_premieres() -> dict:
+    lock_conn = CollectionRepository.try_acquire_import_lock()
+    if lock_conn is None:
+        logger.info("Импорт уже выполняется в другом процессе")
+        return {"imported": 0, "skipped": 0, "stopped_at": "locked"}
+
+    try:
+        return _run_import()
+    finally:
+        CollectionRepository.release_import_lock(lock_conn)
+
+
+def _run_import() -> dict:
     done = CollectionRepository.existing_codes("premieres")
     imported = 0
     skipped = 0
