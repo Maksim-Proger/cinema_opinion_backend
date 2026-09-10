@@ -1,5 +1,6 @@
 import httpx
 import logging
+import time
 from datetime import date
 from psycopg2.extras import Json
 
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 FIRST_YEAR = 1995
 QUOTA_RESERVE = 30
+REQUEST_DELAY_SECONDS = 1.0
+RATE_LIMIT_PAUSE_SECONDS = 15
+MAX_RETRIES = 3
 
 
 def daily_quota_left(client: httpx.Client) -> int:
@@ -52,15 +56,25 @@ def map_item(raw: dict, position: int) -> dict:
     }
 
 
-def fetch_month(client: httpx.Client, year: int, month: str) -> list[dict]:
-    response = client.get(
-        premieres_url(),
-        headers=kinopoisk_headers(),
-        params={"year": year, "month": month},
-    )
-    response.raise_for_status()
-    items = response.json().get("items") or []
-    return [map_item(raw, index + 1) for index, raw in enumerate(items)]
+def fetch_month(client: httpx.Client, year: int, month: str) -> list[dict] | None:
+    for attempt in range(MAX_RETRIES):
+        response = client.get(
+            premieres_url(),
+            headers=kinopoisk_headers(),
+            params={"year": year, "month": month},
+        )
+
+        if response.status_code == 429:
+            pause = RATE_LIMIT_PAUSE_SECONDS * (attempt + 1)
+            logger.warning("429 на %s %s, пауза %s с", month, year, pause)
+            time.sleep(pause)
+            continue
+
+        response.raise_for_status()
+        items = response.json().get("items") or []
+        return [map_item(raw, index + 1) for index, raw in enumerate(items)]
+
+    return None
 
 
 def import_premieres() -> dict:
@@ -88,6 +102,10 @@ def import_premieres() -> dict:
                 items = fetch_month(client, year, month)
                 budget -= 1
 
+                if items is None:
+                    logger.warning("Не удалось получить %s, остановка", code)
+                    return {"imported": imported, "skipped": skipped, "stopped_at": code}
+
                 CollectionRepository.save_collection(
                     code=code,
                     kind="premieres",
@@ -96,5 +114,7 @@ def import_premieres() -> dict:
                 )
                 imported += 1
                 logger.info("%s — %s записей, осталось %s", code, len(items), budget)
+                time.sleep(REQUEST_DELAY_SECONDS)
 
     return {"imported": imported, "skipped": skipped, "stopped_at": None}
+
