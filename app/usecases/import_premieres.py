@@ -21,6 +21,7 @@ QUOTA_EXHAUSTED_STATUS = 402
 REQUEST_DELAY_SECONDS = 1.0
 RATE_LIMIT_PAUSE_SECONDS = 15
 MAX_RETRIES = 3
+RETRY_DAYS = (1, 3, 15)
 
 
 def daily_quota_left(client: httpx.Client) -> int:
@@ -103,12 +104,21 @@ def _run_import() -> dict:
         budget = daily_quota_left(client) - QUOTA_RESERVE
         logger.info("Доступно запросов: %s", budget)
 
-        for year in range(date.today().year + 1, FIRST_YEAR - 1, -1):
+        today = date.today()
+        current_code = premieres_code(today.year, today.month - 1)
+
+        for year in range(today.year, FIRST_YEAR - 1, -1):
             for month_index in range(11, -1, -1):
+                if year == today.year and month_index > today.month - 1:
+                    continue
+
                 code = premieres_code(year, month_index)
 
                 if code in done:
                     skipped += 1
+                    continue
+
+                if code == current_code and today.day not in RETRY_DAYS:
                     continue
 
                 if budget <= 0:
@@ -129,9 +139,13 @@ def _run_import() -> dict:
                     title=f"Премьеры {month} {year}",
                     items=items,
                 )
+                done.add(code)
                 imported += 1
                 logger.info("%s — %s записей, осталось %s", code, len(items), budget)
                 time.sleep(REQUEST_DELAY_SECONDS)
+
+    if current_code not in done and today.day == RETRY_DAYS[-1]:
+        logger.error("Премьеры за %s не загружены после трёх попыток", current_code)
 
     return {"imported": imported, "skipped": skipped, "stopped_at": None}
 
