@@ -14,3 +14,7 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+kinopoisk_api_key: str
+
+
