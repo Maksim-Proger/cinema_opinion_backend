@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS collection_items (
     fetch_status   TEXT NOT NULL DEFAULT 'stub',
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (collection_id, position)
-)
+);
 
 CREATE INDEX IF NOT EXISTS collection_items_kp_id_idx
     ON collection_items (kp_id);

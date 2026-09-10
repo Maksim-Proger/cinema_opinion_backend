@@ -43,7 +43,7 @@ def map_item(raw: dict, position: int) -> dict:
         "rating_kp": None,
         "rating_imdb": None,
         "length_min": to_int(raw.get("duration")),
-        "premiere_ru": raw.get("premiereRu"),
+        "premiere_ru": raw.get("premiereRu") or None,
         "genres": [g["genre"] for g in raw.get("genres") or [] if g.get("genre")],
         "countries": [c["country"] for c in raw.get("countries") or [] if c.get("country")],
         "poster_url": raw.get("posterUrl"),

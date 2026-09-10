@@ -7,7 +7,7 @@ _pool: pool.SimpleConnectionPool | None = None
 def init_db_pool():
     global _pool
     if _pool is None:
-        _pool = pool.SimpleConnectionPool(1, 10, dsn=settings.database_url)
+        _pool = pool.ThreadedConnectionPool(1, 10, dsn=settings.database_url)
 
 
 def get_connection():

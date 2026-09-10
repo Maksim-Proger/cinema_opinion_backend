@@ -7,8 +7,8 @@ MONTHS = [
     "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
 ]
 
-def premiers_url() -> str:
-    return f"{KINOPOISK_BASE_URL}/v2.2/films/premiers"
+def premieres_url() -> str:
+    return f"{KINOPOISK_BASE_URL}/v2.2/films/premieres"
 
 def api_key_info_url() -> str:
     return f"{KINOPOISK_BASE_URL}/v1/api_keys/{settings.kinopoisk_api_key}"
@@ -19,6 +19,6 @@ def kinopoisk_headers() -> dict:
         "accept": "application/json",
     }
 
-def premiers_code(year: int, month_index: int) -> str:
+def premieres_code(year: int, month_index: int) -> str:
     return f"premieres_{year}_{month_index + 1:02d}"
 

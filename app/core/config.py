@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     rustore_service_token: str
     api_secret_key: str
     database_url: str
+    kinopoisk_api_key: str
     avatars_storage_path: str = "/var/lib/cinema-opinion/avatars"
     avatar_max_upload_bytes: int = 5 * 1024 * 1024
 
@@ -14,7 +15,3 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
-
-kinopoisk_api_key: str
-
-
