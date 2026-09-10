@@ -1,7 +1,7 @@
 from psycopg2 import pool
 from app.core.config import settings
 
-_pool: pool.SimpleConnectionPool | None = None
+_pool: pool.ThreadedConnectionPool | None = None
 
 
 def init_db_pool():
