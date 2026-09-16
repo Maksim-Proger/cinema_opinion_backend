@@ -1,5 +1,5 @@
 import io
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 from app.core.config import settings
 from app.repositories.avatar_repository import AvatarRepository
 
