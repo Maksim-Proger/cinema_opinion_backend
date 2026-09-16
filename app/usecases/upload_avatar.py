@@ -3,7 +3,7 @@ from PIL import Image, UnidentifiedImageError
 from app.core.config import settings
 from app.repositories.avatar_repository import AvatarRepository
 
-AVATAR_MAX_DIMENSIONS = (512, 512)
+AVATAR_MAX_DIMENSIONS = (1600, 1600)
 
 
 class UploadAvatarUseCase:
@@ -22,11 +22,12 @@ class UploadAvatarUseCase:
 
         # verify() делает объект непригодным для дальнейшей работы — открываем заново
         image = Image.open(io.BytesIO(raw_bytes))
+        image = ImageOps.exif_transpose(image)
         image = image.convert("RGB")
-        image.thumbnail(AVATAR_MAX_DIMENSIONS)
+        image.thumbnail(AVATAR_MAX_DIMENSIONS, resample=Image.Resampling.LANCZOS)
 
         buffer = io.BytesIO()
-        image.save(buffer, format="JPEG", quality=85)
+        image.save(buffer, format="JPEG", quality=90)
         processed_bytes = buffer.getvalue()
 
         return AvatarRepository.save_avatar(
