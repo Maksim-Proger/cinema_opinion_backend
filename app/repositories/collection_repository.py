@@ -1,3 +1,4 @@
+from psycopg2.extras import RealDictCursor
 from app.core.database import get_connection, release_connection
 
 class CollectionRepository:
@@ -95,6 +96,43 @@ class CollectionRepository:
         except Exception:
             conn.rollback()
             raise
+        finally:
+            release_connection(conn)
+
+    @staticmethod
+    def get_collection_with_items(code: str) -> dict | None:
+        conn = get_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, code, title, items_count, updated_at
+                    FROM collections
+                    WHERE code = %s
+                    """,
+                    (code,)
+                )
+                header = cur.fetchone()
+                if header is None:
+                    return None
+
+                cur.execute(
+                    """
+                    SELECT position, kp_id, title_ru, title_en, year, type,
+                           rating_kp, rating_imdb, length_min, premiere_ru,
+                           genres, countries, poster_url, poster_preview
+                    FROM collection_items
+                    WHERE collection_id = %s
+                    ORDER BY position
+                    """,
+                    (header["id"],)
+                )
+                items = [dict(row) for row in cur.fetchall()]
+
+            result = dict(header)
+            result.pop("id")
+            result["items"] = items
+            return result
         finally:
             release_connection(conn)
 

@@ -2,16 +2,19 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends
-from app.core.security import verify_api_key
-from app.core.firebase import init_firebase
-from app.core.database import init_db_pool
-from app.core.migrations import apply_migrations
-from app.core.tasks import premieres_sync_worker
-from app.core.config import settings
+
+from app.api.v1.collection_routes import router as collection_router
+from app.api.v1.avatar_routes import router as avatar_router
 from app.api.v1.device_routes import router as device_router
 from app.api.v1.event_routes import router as event_router
-from app.api.v1.avatar_routes import router as avatar_router
+from app.core.config import settings
+from app.core.database import init_db_pool
+from app.core.firebase import init_firebase
+from app.core.migrations import apply_migrations
+from app.core.security import verify_api_key
+from app.core.tasks import premieres_sync_worker
 
 
 @asynccontextmanager
@@ -41,6 +44,7 @@ def create_app() -> FastAPI:
     backend_app.include_router(device_router, dependencies=[Depends(verify_api_key)])
     backend_app.include_router(event_router, dependencies=[Depends(verify_api_key)])
     backend_app.include_router(avatar_router, dependencies=[Depends(verify_api_key)])
+    backend_app.include_router(collection_router, dependencies=[Depends(verify_api_key)])
     return backend_app
 
 
