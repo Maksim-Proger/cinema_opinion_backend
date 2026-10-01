@@ -148,7 +148,7 @@ def _run_import() -> dict:
                     title=f"Премьеры {month} {year}",
                     items=items,
                 )
-                done.add(code)
+                done[code] = datetime.now(MOSCOW_TZ)
                 imported += 1
                 logger.info("%s — %s записей, осталось %s", code, len(items), budget)
                 time.sleep(REQUEST_DELAY_SECONDS)
