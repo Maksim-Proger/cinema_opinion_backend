@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from psycopg2.extras import RealDictCursor
+
 from app.core.database import get_connection, release_connection
 
-class CollectionRepository:
 
+class CollectionRepository:
     IMPORT_LOCK_KEY = 776421
 
     @staticmethod
@@ -39,12 +42,15 @@ class CollectionRepository:
             release_connection(conn)
 
     @staticmethod
-    def existing_codes(kind: str) -> set[str]:
+    def existing_collections(kind: str) -> dict[str, datetime]:
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT code FROM collections WHERE kind = %s", (kind,))
-                return {row[0] for row in cur.fetchall()}
+                cur.execute(
+                    "SELECT code, updated_at FROM collections WHERE kind = %s",
+                    (kind,)
+                )
+                return dict(cur.fetchall())
         finally:
             release_connection(conn)
 
@@ -135,4 +141,3 @@ class CollectionRepository:
             return result
         finally:
             release_connection(conn)
-

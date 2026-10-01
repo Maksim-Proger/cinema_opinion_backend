@@ -1,4 +1,5 @@
 from app.core.config import settings
+from zoneinfo import ZoneInfo
 
 KINOPOISK_BASE_URL = "https://kinopoiskapiunofficial.tech/api"
 
@@ -6,6 +7,8 @@ MONTHS = [
     "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
     "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
 ]
+
+MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
 def premieres_url() -> str:
     return f"{KINOPOISK_BASE_URL}/v2.2/films/premieres"

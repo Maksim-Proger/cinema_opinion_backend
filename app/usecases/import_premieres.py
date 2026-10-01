@@ -1,8 +1,10 @@
 import httpx
 import logging
 import time
-from datetime import date
 from psycopg2.extras import Json
+from app.core.kinopoisk import MOSCOW_TZ
+
+from datetime import datetime, timedelta
 
 from app.core.kinopoisk import (
     MONTHS,
@@ -96,16 +98,23 @@ def import_premieres() -> dict:
 
 
 def _run_import() -> dict:
-    done = CollectionRepository.existing_codes("premieres")
+    done = CollectionRepository.existing_collections("premieres")
     imported = 0
     skipped = 0
+
+    today = datetime.now(MOSCOW_TZ).date()
+    month_start = today.replace(day=1)
+    current_code = premieres_code(today.year, today.month - 1)
+
+    previous = month_start - timedelta(days=1)
+    previous_code = premieres_code(previous.year, previous.month - 1)
+    previous_updated = done.get(previous_code)
+    if previous_updated and previous_updated.astimezone(MOSCOW_TZ).date() < month_start:
+        del done[previous_code]
 
     with httpx.Client(timeout=30.0) as client:
         budget = daily_quota_left(client) - QUOTA_RESERVE
         logger.info("Доступно запросов: %s", budget)
-
-        today = date.today()
-        current_code = premieres_code(today.year, today.month - 1)
 
         for year in range(today.year, FIRST_YEAR - 1, -1):
             for month_index in range(11, -1, -1):
