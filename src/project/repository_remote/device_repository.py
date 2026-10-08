@@ -2,6 +2,8 @@ import time
 
 from firebase_admin import db
 
+from project.utils.models import DevicePushTarget
+
 
 class DeviceRepository:
 
@@ -27,6 +29,46 @@ class DeviceRepository:
         })
 
     @staticmethod
+    def disable_push(node_user_key: str, device_id: str):
+        ref = db.reference(f"list_users/{node_user_key}/devices/{device_id}")
+        ref.update({"pushEnabled": False})
+
+    @staticmethod
+    def get_push_targets(node_user_keys: list[str]) -> list[DevicePushTarget]:
+        targets: list[DevicePushTarget] = []
+
+        for node_user_key in node_user_keys:
+            devices_ref = db.reference(f"list_users/{node_user_key}/devices")
+            devices_snapshot = devices_ref.get()
+
+            if not devices_snapshot:
+                continue
+
+            for device_id, device_data in devices_snapshot.items():
+
+                if not device_data:
+                    continue
+
+                if not device_data.get("pushEnabled", False):
+                    continue
+
+                push_token = device_data.get("pushToken")
+
+                if not push_token:
+                    continue
+
+                targets.append(
+                    DevicePushTarget(
+                        userKey=node_user_key,
+                        deviceId=device_id,
+                        pushToken=push_token,
+                        platform=device_data.get("platform", "android")
+                    )
+                )
+
+        return targets
+
+    @staticmethod
     def _remove_device_from_other_users(current_user_key: str, device_id: str):
         users_ref = db.reference("list_users")
         snapshot = users_ref.get(shallow=True)
@@ -43,8 +85,3 @@ class DeviceRepository:
 
             if device_data is not None:
                 device_ref.delete()
-
-    @staticmethod
-    def disable_push(node_user_key: str, device_id: str):
-        ref = db.reference(f"list_users/{node_user_key}/devices/{device_id}")
-        ref.update({"pushEnabled": False})
