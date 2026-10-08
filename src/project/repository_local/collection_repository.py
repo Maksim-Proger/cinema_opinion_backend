@@ -1,0 +1,147 @@
+from datetime import datetime
+
+from psycopg2.extras import Json, RealDictCursor
+
+from project.repository_local.database import get_connection, release_connection
+from project.utils.models import MovieItem
+
+
+class CollectionRepository:
+    IMPORT_LOCK_KEY = 776421
+
+    @staticmethod
+    def try_acquire_import_lock():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pg_try_advisory_lock(%s)",
+                    (CollectionRepository.IMPORT_LOCK_KEY,)
+                )
+                acquired = cur.fetchone()[0]
+            conn.commit()
+        except Exception:
+            release_connection(conn)
+            raise
+
+        if acquired:
+            return conn
+
+        release_connection(conn)
+        return None
+
+    @staticmethod
+    def release_import_lock(conn):
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pg_advisory_unlock(%s)",
+                    (CollectionRepository.IMPORT_LOCK_KEY,)
+                )
+            conn.commit()
+        finally:
+            release_connection(conn)
+
+    @staticmethod
+    def existing_collections(kind: str) -> dict[str, datetime]:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT code, updated_at FROM collections WHERE kind = %s",
+                    (kind,)
+                )
+                return dict(cur.fetchall())
+        finally:
+            release_connection(conn)
+
+    @staticmethod
+    def save_collection(code: str, kind: str, title: str, items: list[MovieItem]) -> int:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO collections (code, kind, title, items_count, updated_at)
+                    VALUES (%s, %s, %s, %s, now())
+                    ON CONFLICT (code) DO UPDATE SET
+                        kind = EXCLUDED.kind,
+                        title = EXCLUDED.title,
+                        items_count = EXCLUDED.items_count,
+                        updated_at = now()
+                    RETURNING id
+                    """,
+                    (code, kind, title, len(items))
+                )
+                collection_id = cur.fetchone()[0]
+
+                cur.execute(
+                    "DELETE FROM collection_items WHERE collection_id = %s",
+                    (collection_id,)
+                )
+
+                if items:
+                    cur.executemany(
+                        """
+                        INSERT INTO collection_items (
+                            collection_id, position, kp_id, title_ru, title_en,
+                            year, type, rating_kp, rating_imdb, length_min,
+                            premiere_ru, genres, countries,
+                            poster_url, poster_preview, raw
+                        )
+                        VALUES (
+                            %(collection_id)s, %(position)s, %(kp_id)s, %(title_ru)s, %(title_en)s,
+                            %(year)s, %(type)s, %(rating_kp)s, %(rating_imdb)s, %(length_min)s,
+                            %(premiere_ru)s, %(genres)s, %(countries)s,
+                            %(poster_url)s, %(poster_preview)s, %(raw)s
+                        )
+                        """,
+                        [
+                            {**item.model_dump(), "raw": Json(item.raw), "collection_id": collection_id}
+                            for item in items
+                        ]
+                    )
+            conn.commit()
+            return collection_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            release_connection(conn)
+
+    @staticmethod
+    def get_collection_with_items(code: str) -> dict | None:
+        conn = get_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, code, title, items_count, updated_at
+                    FROM collections
+                    WHERE code = %s
+                    """,
+                    (code,)
+                )
+                header = cur.fetchone()
+                if header is None:
+                    return None
+
+                cur.execute(
+                    """
+                    SELECT position, kp_id, title_ru, title_en, year, type,
+                           rating_kp, rating_imdb, length_min, premiere_ru,
+                           genres, countries, poster_url, poster_preview
+                    FROM collection_items
+                    WHERE collection_id = %s
+                    ORDER BY position
+                    """,
+                    (header["id"],)
+                )
+                items = [dict(row) for row in cur.fetchall()]
+
+            result = dict(header)
+            result.pop("id")
+            result["items"] = items
+            return result
+        finally:
+            release_connection(conn)

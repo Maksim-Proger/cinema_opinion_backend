@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS collections (
     id  SERIAL PRIMARY KEY,
-    code        TEXT NOT NULL UNIQUE,
-    kind        TEXT NOT NULL,
+    code        TEXT NOT NULL UNIQUE,                 -- имя подборки (premieres_2026_09, top_250)
+    kind        TEXT NOT NULL,                        -- тип подборки (premieres, top)
     title       TEXT,
     items_count INTEGER NOT NULL DEFAULT 0,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS collections (
 CREATE TABLE IF NOT EXISTS collection_items (
     id             BIGSERIAL PRIMARY KEY,
     collection_id  INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-    position       INTEGER NOT NULL,
+    position       INTEGER NOT NULL,                   -- место фильма в подборке (1 — первый)
     kp_id          INTEGER,
     title_ru       TEXT,
     title_en       TEXT,
@@ -25,15 +25,15 @@ CREATE TABLE IF NOT EXISTS collection_items (
     poster_url     TEXT,
     poster_preview TEXT,
     description    TEXT,
-    raw            JSONB,
-    fetch_status   TEXT NOT NULL DEFAULT 'stub',
+    raw            JSONB,                               -- объект целиком, без разбора
+    fetch_status   TEXT NOT NULL DEFAULT 'stub',        -- загружена ли полная карточка фильма (не используется)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (collection_id, position)
 );
 
-CREATE INDEX IF NOT EXISTS collection_items_kp_id_idx
-    ON collection_items (kp_id);
+CREATE INDEX IF NOT EXISTS collection_items_kp_id_idx   -- индекс для быстрого поиска фильма по id Кинопоиска
+    ON collection_items (kp_id);                        -- по колонке kp_id
 
-CREATE INDEX IF NOT EXISTS collection_items_collection_idx
-    ON collection_items (collection_id, position);
+CREATE INDEX IF NOT EXISTS collection_items_collection_idx      -- индекс для быстрой выборки фильмов одной подборки
+    ON collection_items (collection_id, position);              -- по подборке, сразу упорядоченно по месту
 
