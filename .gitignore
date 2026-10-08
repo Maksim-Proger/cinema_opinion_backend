@@ -6,7 +6,7 @@ venv/
 .env
 
 # ===== Кэш Python =====
-pycache/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -24,3 +24,5 @@ pycache/
 
 # Google Services
 serviceAccountKey.json
+
+*.egg-info/

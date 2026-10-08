@@ -1,0 +1,13 @@
+from project.gateway.schemas.device_models import RegisterDeviceRequest
+from project.repository_remote.device_repository import DeviceRepository
+
+
+class RegisterDeviceUseCase:
+
+    def execute(self, request: RegisterDeviceRequest) -> None:
+        DeviceRepository.upsert_device(
+            node_user_key=request.userId,
+            device_id=request.deviceId,
+            push_token=request.pushToken,
+            platform=request.platform
+        )
