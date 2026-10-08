@@ -1,26 +1,54 @@
 import logging
+from typing import Protocol
 
 from project.gateway.schemas.event_models import ChangeCreatedEvent
-from project.repository_remote.changes_repository import ChangesRepository
-from project.repository_remote.device_query_repository import DeviceQueryRepository
-from project.repository_remote.user_repository import UserRepository
-from project.notifier.rustore_push_service import RuStorePushService
+from project.utils.models import DevicePushTarget
 
 logger = logging.getLogger(__name__)
 
 
+class ChangesSource(Protocol):
+    def get_change(self, change_id: str) -> dict | None: ...
+
+    def mark_as_processed(self, change_id: str) -> bool: ...
+
+
+class SharedListMembers(Protocol):
+    def find_users_by_shared_list(self, shared_list_id: str) -> list[str]: ...
+
+
+class PushTargets(Protocol):
+    def get_push_targets(self, node_user_keys: list[str]) -> list[DevicePushTarget]: ...
+
+
+class PushSender(Protocol):
+    def send(self, device_push_token: str, title: str, body: str) -> tuple[int, str]: ...
+
+
 class ProcessChangeEventUseCase:
+    def __init__(
+            self,
+            changes: ChangesSource,
+            members: SharedListMembers,
+            targets: PushTargets,
+            sender: PushSender
+    ):
+        self._changes = changes
+        self._members = members
+        self._targets = targets
+        self._sender = sender
+
     def execute(self, event: ChangeCreatedEvent) -> dict:
         change_id = event.changeId
         author_node_key = event.userId
 
         # 1. Получаем само событие из БД
-        change = ChangesRepository.get_change(change_id)
+        change = self._changes.get_change(change_id)
         if not change:
             return {"status": "not_found"}
 
-        # 2. Атомарно захватываем право на обработку (убрали is_processed)
-        acquired = ChangesRepository.mark_as_processed(change_id)
+        # 2. Атомарно захватываем право на обработку
+        acquired = self._changes.mark_as_processed(change_id)
         if not acquired:
             return {"status": "already_processed"}
 
@@ -30,7 +58,7 @@ class ProcessChangeEventUseCase:
             return {"status": "invalid_event", "reason": "sharedListId missing"}
 
         # 4. Находим участников списка
-        all_node_user_keys = UserRepository.find_users_by_shared_list(shared_list_id)
+        all_node_user_keys = self._members.find_users_by_shared_list(shared_list_id)
 
         # 5. Исключаем автора
         node_user_keys = [key for key in all_node_user_keys if key != author_node_key]
@@ -39,7 +67,7 @@ class ProcessChangeEventUseCase:
             return {"status": "processed", "reason": "no_recipients_excluding_author"}
 
         # 6. Получаем токены устройств
-        push_targets = DeviceQueryRepository.get_push_targets(node_user_keys)
+        push_targets = self._targets.get_push_targets(node_user_keys)
         if not push_targets:
             return {"status": "processed", "reason": "no_devices"}
 
@@ -53,7 +81,7 @@ class ProcessChangeEventUseCase:
         # 8. Рассылка
         for target in push_targets:
             try:
-                status_code, resp_text = RuStorePushService.send(
+                status_code, resp_text = self._sender.send(
                     device_push_token=target.pushToken,
                     title=title,
                     body=body
