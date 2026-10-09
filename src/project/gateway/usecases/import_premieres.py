@@ -8,30 +8,41 @@ from project.utils.models import MovieItem
 logger = logging.getLogger(__name__)
 
 FIRST_YEAR = 1995
-QUOTA_RESERVE = 30  # сколько запросов из дневной квоты не трогать: оставить приложению
+QUOTA_RESERVE = 30  # сколько запросов из дневной квоты не трогать
 RETRY_DAYS = (1, 3, 15)  # в какие числа загружать текущий месяц
 
+# что use case нужно от источника данных
 class PremieresSource(Protocol):
 
+    # сколько запросов к источнику осталось на сегодня
     def daily_quota_left(self) -> int: ...
 
+    # премьеры за месяц; None — источник не ответил или квота кончилась
     def fetch_premieres(self, year: int, month: int) -> list[MovieItem] | None: ...
 
+# что use case нужно от хранилища
 class CollectionStore(Protocol):
+    # ставит пометку «загрузка идёт»; None, если она уже стоит
     def try_acquire_import_lock(self): ...
 
+    # снимает пометку «загрузка идёт»
     def release_import_lock(self, lock) -> None: ...
 
+    # коды уже сохранённых подборок и время их обновления
     def existing_collections(self, kind: str) -> dict[str, datetime]: ...
 
+    # сохраняет подборку целиком, заменяя старую версию
     def save_collection(self, code: str, kind: str, title: str, items: list[MovieItem]) -> int: ...
 
 
+# загрузка премьер: решает, какие месяцы скачать и сколько запросов потратить
 class ImportPremieresUseCase:
+    # запоминает источник данных и хранилище
     def __init__(self, source: PremieresSource, store: CollectionStore):
         self._source = source
         self._store = store
 
+    # запускает загрузку, если её не ведёт другой процесс
     def execute(self) -> dict:
         lock = self._store.try_acquire_import_lock()
         if lock is None:
@@ -43,6 +54,7 @@ class ImportPremieresUseCase:
         finally:
             self._store.release_import_lock(lock)
 
+    # идёт по месяцам от нового к старому и сохраняет те, которых нет в базе
     def _run_import(self) -> dict:
         done = self._store.existing_collections("premieres")
         imported = 0

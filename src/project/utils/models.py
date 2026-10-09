@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 
 
+# устройство, на которое нужно отправить пуш
 class DevicePushTarget(BaseModel):
     userKey: str
     deviceId: str
     pushToken: str
     platform: str
 
+# один фильм в подборке; в таком виде он идёт из collector в хранилище
 class MovieItem(BaseModel):
     position: int
     kp_id: int | None

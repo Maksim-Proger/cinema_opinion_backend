@@ -20,12 +20,14 @@ REQUEST_DELAY_SECONDS = 1.0  # пауза между запросами, что�
 RATE_LIMIT_PAUSE_SECONDS = 15  # пауза после ответа 429; растёт с каждой попыткой: 15, 30, 45 с
 MAX_RETRIES = 3  # сколько раз пробовать запросить один месяц, прежде чем сдаться
 
+# превращает значение в число; не получилось — None
 def to_int(value) -> int | None:
     try:
         return int(value)
     except (TypeError, ValueError):
         return None
 
+# переводит один фильм из ответа Кинопоиска в MovieItem
 def map_premiere(raw: dict, position: int) -> MovieItem:
     return MovieItem(
         position=position,
@@ -43,7 +45,9 @@ def map_premiere(raw: dict, position: int) -> MovieItem:
         raw=raw,
     )
 
+# все запросы к API Кинопоиска идут через этот класс
 class KinopoiskClient:
+    # создаёт HTTP-клиент с адресом, ключом и таймаутом
     def __init__(self):
         self._client = httpx.Client(
             base_url=KINOPOISK_BASE_URL,
@@ -54,15 +58,18 @@ class KinopoiskClient:
             timeout=30.0,
         )
 
+    # закрывает HTTP-клиент при остановке сервиса
     def close(self):
         self._client.close()
 
+    # сколько запросов осталось на сегодня
     def daily_quota_left(self) -> int:
         response = self._client.get(f"/v1/api_keys/{settings.kinopoisk_api_key}")
         response.raise_for_status()
         daily = response.json()["dailyQuota"]
         return daily["value"] - daily["used"]
 
+    # премьеры за месяц; при 429 повторяет с паузой; None — квота кончилась или попытки исчерпаны
     def fetch_premieres(self, year: int, month: int) -> list[MovieItem] | None:
         month_name = MONTHS[month - 1]
 

@@ -8,14 +8,19 @@ from project.utils.config import settings
 AVATAR_MAX_DIMENSIONS = (1600, 1600)
 
 
+# что use case нужно от хранилища аватарок
 class AvatarStore(Protocol):
+    # сохраняет аватарку и возвращает её id
     def save_avatar(self, user_id: str, image_bytes: bytes, content_type: str) -> str: ...
 
 
+# проверка и сжатие загруженной аватарки
 class UploadAvatarUseCase:
+    # запоминает хранилище аватарок
     def __init__(self, store: AvatarStore):
         self._store = store
 
+    # проверяет размер и что это картинка, уменьшает до 1600×1600, сохраняет как JPEG
     def execute(self, user_id: str, raw_bytes: bytes) -> str:
         if len(raw_bytes) > settings.avatar_max_upload_bytes:
             raise ValueError("File is too large")

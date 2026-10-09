@@ -5,8 +5,10 @@ from project.utils.config import settings
 from project.repository_local.database import get_connection, release_connection
 
 
+# аватарки: файлы лежат на диске, запись о каждой в PG
 class AvatarRepository:
 
+    # пишет файл на диск, обновляет запись пользователя в PG, удаляет прежний файл; возвращает id аватарки
     @staticmethod
     def save_avatar(user_id: str, image_bytes: bytes, content_type: str) -> str:
         avatar_id = str(uuid.uuid4())
@@ -45,6 +47,7 @@ class AvatarRepository:
 
         return avatar_id
 
+    # путь к файлу аватарки пользователя и его тип, либо None
     @staticmethod
     def get_avatar_path(user_id: str) -> tuple[str, str] | None:
         conn = get_connection()
@@ -64,6 +67,7 @@ class AvatarRepository:
         file_name, content_type = row
         return os.path.join(settings.avatars_storage_path, file_name), content_type
 
+    # имя файла текущей аватарки пользователя из PG, либо None
     @staticmethod
     def _get_file_name(user_id: str) -> str | None:
         conn = get_connection()

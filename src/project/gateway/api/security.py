@@ -6,6 +6,7 @@ from project.utils.config import settings
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
+# пропускает запрос только с верным ключом в заголовке X-API-Key, иначе ответ 403
 def verify_api_key(api_key: str = Security(api_key_header)):
     if api_key != settings.api_secret_key:
         raise HTTPException(

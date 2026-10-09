@@ -7,13 +7,17 @@ from fastapi.responses import FileResponse
 from project.gateway.schemas.device_models import SAFE_ID_PATTERN
 from project.gateway.usecases.upload_avatar import UploadAvatarUseCase
 
+# что роуту нужно от хранилища: найти файл аватарки
 class AvatarReader(Protocol):
+    # путь к файлу аватарки и его тип, либо None
     def get_avatar_path(self, user_id: str) -> tuple[str, str] | None: ...
 
 
+# собирает роуты /avatars/...
 def create_avatar_router(upload_avatar: UploadAvatarUseCase, reader: AvatarReader) -> APIRouter:
     router = APIRouter(prefix="/avatars", tags=["avatars"])
 
+    # POST /avatars/upload: загрузить аватарку; неверный id или файл — 400
     @router.post("/upload")
     def upload(userId: str = Form(...), file: UploadFile = File(...)):
         if not SAFE_ID_PATTERN.match(userId):
@@ -28,6 +32,7 @@ def create_avatar_router(upload_avatar: UploadAvatarUseCase, reader: AvatarReade
 
         return {"status": "ok", "avatarId": avatar_id}
 
+    # GET /avatars/{user_id}: отдать аватарку файлом; нет — 404
     @router.get("/{user_id}")
     def get_avatar(user_id: str):
         if not SAFE_ID_PATTERN.match(user_id):

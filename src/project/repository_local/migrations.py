@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 MIGRATIONS_DIR = Path(__file__).resolve().parents[3] / "migrations"
 
 
+# выполняет файлы из migrations/, которые ещё не применялись, и записывает их в schema_migrations
 def apply_migrations():
     conn = get_connection()
     try:

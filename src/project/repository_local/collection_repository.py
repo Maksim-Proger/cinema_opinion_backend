@@ -6,9 +6,11 @@ from project.repository_local.database import get_connection, release_connection
 from project.utils.models import MovieItem
 
 
+# подборки фильмов в PG
 class CollectionRepository:
     IMPORT_LOCK_KEY = 776421
 
+    # ставит в PG пометку «загрузка идёт»; возвращает соединение, на котором она держится, либо None, если уже стоит
     @staticmethod
     def try_acquire_import_lock():
         conn = get_connection()
@@ -30,6 +32,7 @@ class CollectionRepository:
         release_connection(conn)
         return None
 
+    # снимает пометку «загрузка идёт» и возвращает соединение в пул
     @staticmethod
     def release_import_lock(conn):
         try:
@@ -42,6 +45,7 @@ class CollectionRepository:
         finally:
             release_connection(conn)
 
+    # словарь «код подборки → когда обновлена» для всех подборок этого типа
     @staticmethod
     def existing_collections(kind: str) -> dict[str, datetime]:
         conn = get_connection()
@@ -55,6 +59,7 @@ class CollectionRepository:
         finally:
             release_connection(conn)
 
+    # записывает подборку с фильмами целиком, а при сбое откатывает; прошлую версию заменяет
     @staticmethod
     def save_collection(code: str, kind: str, title: str, items: list[MovieItem]) -> int:
         conn = get_connection()
@@ -109,6 +114,7 @@ class CollectionRepository:
         finally:
             release_connection(conn)
 
+    # подборка и её фильмы по коду, либо None
     @staticmethod
     def get_collection_with_items(code: str) -> dict | None:
         conn = get_connection()

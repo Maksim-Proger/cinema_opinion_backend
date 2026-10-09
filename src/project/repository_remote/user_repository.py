@@ -1,7 +1,9 @@
 from firebase_admin import db
 
 
+# пользователи в Firebase
 class UserRepository:
+    # id пользователей, состоящих в общем списке
     @staticmethod
     def find_users_by_shared_list(shared_list_id: str) -> list[str]:
         ref = db.reference("shared_lists")

@@ -5,8 +5,10 @@ from firebase_admin import db
 from project.utils.models import DevicePushTarget
 
 
+# устройства пользователей в Firebase
 class DeviceRepository:
 
+    # убирает устройство у других пользователей, записывает его с токеном текущему и включает пуши
     @staticmethod
     def upsert_device(
             node_user_key: str,
@@ -28,11 +30,13 @@ class DeviceRepository:
             "lastSeenAt": int(time.time())
         })
 
+    # выключает пуши для устройства
     @staticmethod
     def disable_push(node_user_key: str, device_id: str):
         ref = db.reference(f"list_users/{node_user_key}/devices/{device_id}")
         ref.update({"pushEnabled": False})
 
+    # устройства с включёнными пушами у перечисленных пользователей
     @staticmethod
     def get_push_targets(node_user_keys: list[str]) -> list[DevicePushTarget]:
         targets: list[DevicePushTarget] = []
@@ -68,6 +72,7 @@ class DeviceRepository:
 
         return targets
 
+    # удаляет устройство у остальных пользователей (после смены аккаунта на том же телефоне)
     @staticmethod
     def _remove_device_from_other_users(current_user_key: str, device_id: str):
         users_ref = db.reference("list_users")

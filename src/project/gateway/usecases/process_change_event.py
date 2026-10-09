@@ -7,25 +7,36 @@ from project.utils.models import DevicePushTarget
 logger = logging.getLogger(__name__)
 
 
+# что use case нужно от хранилища событий
 class ChangesSource(Protocol):
+    # событие об изменении по id, либо None
     def get_change(self, change_id: str) -> dict | None: ...
 
+    # помечает событие обработанным; False — оно уже было обработано
     def mark_as_processed(self, change_id: str) -> bool: ...
 
 
+# что use case нужно от хранилища общих списков
 class SharedListMembers(Protocol):
+    # id пользователей, у которых есть этот общий список
     def find_users_by_shared_list(self, shared_list_id: str) -> list[str]: ...
 
 
+# что use case нужно от хранилища устройств
 class PushTargets(Protocol):
+    # устройства с включёнными пушами у перечисленных пользователей
     def get_push_targets(self, node_user_keys: list[str]) -> list[DevicePushTarget]: ...
 
 
+# что use case нужно от отправщика пушей
 class PushSender(Protocol):
+    # отправляет один пуш; возвращает код ответа и его текст
     def send(self, device_push_token: str, title: str, body: str) -> tuple[int, str]: ...
 
 
+# рассылка пушей участникам общего списка, когда в нём появилась заметка
 class ProcessChangeEventUseCase:
+    # запоминает хранилища и отправщика пушей
     def __init__(
             self,
             changes: ChangesSource,
@@ -38,6 +49,7 @@ class ProcessChangeEventUseCase:
         self._targets = targets
         self._sender = sender
 
+    # находит участников списка, кроме автора, шлёт пуш на каждое их устройство; возвращает счётчики отправленных и неудачных
     def execute(self, event: ChangeCreatedEvent) -> dict:
         change_id = event.changeId
         author_node_key = event.userId

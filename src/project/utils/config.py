@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 
 
+# настройки сервиса из файла .env; если чего-то не хватает, сервис не запустится
 class Settings(BaseSettings):
     firebase_db_url: str
     firebase_cred_path: str
