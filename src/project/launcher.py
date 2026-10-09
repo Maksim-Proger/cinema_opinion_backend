@@ -28,6 +28,7 @@ from project.repository_remote.user_repository import UserRepository
 from project.utils.config import settings
 
 
+# собирает приложение: создаёт объекты, связывает их между собой, подключает роуты
 def create_app() -> FastAPI:
     logging.basicConfig(
         level=logging.INFO,
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
         sender=RuStorePushService()
     )
 
+    # при старте применяет миграции и запускает фоновую загрузку премьер, при остановке закрывает её
     @asynccontextmanager
     async def lifespan(backend_app: FastAPI):
         apply_migrations()
@@ -89,4 +91,4 @@ def create_app() -> FastAPI:
     return backend_app
 
 
-app = create_app()
+app = create_app()  # приложение, которое запускает uvicorn (project.launcher:app)

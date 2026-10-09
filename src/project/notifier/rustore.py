@@ -8,10 +8,12 @@ from project.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
-RUSTORE_BASE_URL = "https://vkpns.rustore.ru/v1"
+RUSTORE_BASE_URL = "https://vkpns.rustore.ru/v1"  # адрес API RuStore для отправки пушей
 
 
+# отправка пушей через RuStore
 class RuStorePushService:
+    # шлёт один пуш на токен устройства; при сбоях повторяет до 6 раз с нарастающей паузой
     @staticmethod
     @retry(
         retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError)),
