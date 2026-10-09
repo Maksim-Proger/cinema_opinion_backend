@@ -2,13 +2,13 @@ import re
 
 from pydantic import BaseModel, field_validator
 
-SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-]{1,128}$')
+SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-]{1,128}$')  # допустимый id: латиница, цифры, _ и -, от 1 до 128 знаков
 
 
 # тело запроса /events/change-created: кто создал заметку и id события
 class ChangeCreatedEvent(BaseModel):
     userId: str  # Добавили поле для исключения отправителя
-    changeId: str
+    changeId: str  # id события в Firebase
 
     # допускает в id только буквы, цифры, _ и - (до 128 знаков)
     @field_validator('userId', 'changeId')

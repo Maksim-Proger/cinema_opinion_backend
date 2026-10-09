@@ -8,7 +8,7 @@ from project.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
-RUSTORE_BASE_URL = "https://vkpns.rustore.ru/v1"
+RUSTORE_BASE_URL = "https://vkpns.rustore.ru/v1"  # адрес API RuStore для отправки пушей
 
 
 # отправка пушей через RuStore

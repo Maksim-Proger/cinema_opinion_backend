@@ -8,8 +8,9 @@ from project.utils.models import MovieItem
 
 logger = logging.getLogger(__name__)
 
-KINOPOISK_BASE_URL = "https://kinopoiskapiunofficial.tech/api"
+KINOPOISK_BASE_URL = "https://kinopoiskapiunofficial.tech/api"  # адрес API Кинопоиска
 
+# названия месяцев в формате API Кинопоиска; индекс = номер месяца минус 1
 MONTHS = [
     "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
     "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",

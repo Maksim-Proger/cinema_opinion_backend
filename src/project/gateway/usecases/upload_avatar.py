@@ -5,7 +5,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from project.utils.config import settings
 
-AVATAR_MAX_DIMENSIONS = (1600, 1600)
+AVATAR_MAX_DIMENSIONS = (1600, 1600)  # максимальный размер аватарки в пикселях (ширина, высота)
 
 
 # что use case нужно от хранилища аватарок

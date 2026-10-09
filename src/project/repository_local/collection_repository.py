@@ -8,7 +8,7 @@ from project.utils.models import MovieItem
 
 # подборки фильмов в PG
 class CollectionRepository:
-    IMPORT_LOCK_KEY = 776421
+    IMPORT_LOCK_KEY = 776421  # номер пометки «загрузка идёт» в PG; у всех процессов один и тот же
 
     # ставит в PG пометку «загрузка идёт»; возвращает соединение, на котором она держится, либо None, если уже стоит
     @staticmethod

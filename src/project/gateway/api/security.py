@@ -3,7 +3,7 @@ from fastapi.security import APIKeyHeader
 
 from project.utils.config import settings
 
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)  # откуда брать ключ: заголовок X-API-Key (ошибку при его отсутствии выдаём сами)
 
 
 # пропускает запрос только с верным ключом в заголовке X-API-Key, иначе ответ 403

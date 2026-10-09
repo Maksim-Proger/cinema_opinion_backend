@@ -2,7 +2,7 @@ from psycopg2 import pool
 
 from project.utils.config import settings
 
-_pool: pool.ThreadedConnectionPool | None = None
+_pool: pool.ThreadedConnectionPool | None = None  # пул соединений с PG; создаётся в init_db_pool
 
 
 # создаёт пул (набор заранее открытых соединений с PG), если он ещё не создан

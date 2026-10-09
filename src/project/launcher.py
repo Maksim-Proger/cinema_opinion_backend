@@ -91,4 +91,4 @@ def create_app() -> FastAPI:
     return backend_app
 
 
-app = create_app()
+app = create_app()  # приложение, которое запускает uvicorn (project.launcher:app)

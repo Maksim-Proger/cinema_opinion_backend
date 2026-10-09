@@ -2,13 +2,13 @@ import re
 
 from pydantic import BaseModel, field_validator
 
-SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-]{1,128}$')
+SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-]{1,128}$')  # допустимый id: латиница, цифры, _ и -, от 1 до 128 знаков
 
 
 # тело запроса /devices/disable
 class DisablePushRequest(BaseModel):
-    userId: str
-    deviceId: str
+    userId: str  # id пользователя
+    deviceId: str  # id устройства
 
     # допускает в id только буквы, цифры, _ и - (до 128 знаков)
     @field_validator('userId', 'deviceId')
@@ -21,10 +21,10 @@ class DisablePushRequest(BaseModel):
 
 # тело запроса /devices/register
 class RegisterDeviceRequest(BaseModel):
-    userId: str
-    deviceId: str
-    pushToken: str
-    platform: str = "android"
+    userId: str  # id пользователя
+    deviceId: str  # id устройства
+    pushToken: str  # токен, по которому RuStore доставляет пуши на устройство
+    platform: str = "android"  # платформа устройства; по умолчанию android
 
     # допускает только платформы android и ios
     @field_validator('platform')

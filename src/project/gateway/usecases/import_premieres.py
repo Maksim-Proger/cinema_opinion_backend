@@ -7,7 +7,7 @@ from project.utils.models import MovieItem
 
 logger = logging.getLogger(__name__)
 
-FIRST_YEAR = 1995
+FIRST_YEAR = 1995  # с какого года загружать премьеры
 QUOTA_RESERVE = 30  # сколько запросов из дневной квоты не трогать
 RETRY_DAYS = (1, 3, 15)  # в какие числа загружать текущий месяц
 

@@ -7,8 +7,8 @@ from project.gateway.usecases.premieres import MOSCOW_TZ
 
 logger = logging.getLogger(__name__)
 
-SYNC_TIME = time(0, 5)
-RETRY_AFTER_ERROR_SECONDS = 60 * 60
+SYNC_TIME = time(0, 5)  # во сколько запускать ежедневную загрузку (по Москве)
+RETRY_AFTER_ERROR_SECONDS = 60 * 60  # через сколько секунд повторить после ошибки: 1 час
 
 
 # сколько секунд осталось до ближайших 00:05 по Москве
